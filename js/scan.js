@@ -1,5 +1,5 @@
 /* ============================================================
-   Barcode Scanner — สแกนบาร์โค้ดเพื่อเพิ่มสินค้าลงตะกร้า
+   Barcode Scanner — สแกนบาร์โค้ดต่อเนื่องได้ (สำหรับซื้อหลายอย่าง)
    ============================================================ */
 
 const Scanner = {
@@ -7,8 +7,8 @@ const Scanner = {
   active: false,
   lastScan: null,
   lastScanTime: 0,
-  processing: false,     // กำลัง process อยู่ → กันสแกนซ้ำ
-  autoCheckout: true,    // สแกนสำเร็จ → ไปหน้าจ่ายเงินเลย
+  cooldown: 1500,        // กันสแกนซ้ำบาร์โค้ดเดิมภายใน 1.5 วิ
+  scanCount: 0,          // นับจำนวนที่สแกนสำเร็จในรอบนี้
 
   async open() {
     if (this.active) return;
@@ -23,11 +23,12 @@ const Scanner = {
       return;
     }
 
-    this.processing = false;
     this.lastScan = null;
+    this.scanCount = 0;
 
     document.getElementById('scannerModal').classList.add('show');
-    document.getElementById('scanStatus').textContent = '⏳ กำลังเปิดกล้อง...';
+    document.getElementById('scanStatus').innerHTML =
+      '⏳ กำลังเปิดกล้อง...<br><span style="font-size:13px;opacity:0.7">สแกนได้ต่อเนื่อง — กด ✕ เมื่อเสร็จ</span>';
 
     try {
       this.html5Qr = new Html5Qrcode("scannerView");
@@ -55,7 +56,8 @@ const Scanner = {
       );
 
       this.active = true;
-      document.getElementById('scanStatus').textContent = '📷 เล็งบาร์โค้ดให้อยู่ในกรอบ';
+      document.getElementById('scanStatus').innerHTML =
+        '📷 เล็งบาร์โค้ดในกรอบ — สแกนได้เรื่อยๆ<br><span style="font-size:13px;opacity:0.7">กด ✕ มุมขวาบน เมื่อสแกนเสร็จ</span>';
     } catch (e) {
       console.error('Scanner error:', e);
       document.getElementById('scanStatus').textContent = '⚠️ ' + this.translateError(e);
@@ -64,8 +66,6 @@ const Scanner = {
   },
 
   async close() {
-    this.processing = true;   // ← ล็อกทันที กันสแกนซ้ำตอนปิด
-
     if (this.html5Qr && this.active) {
       try {
         await this.html5Qr.stop();
@@ -74,22 +74,30 @@ const Scanner = {
         console.warn('Stop error:', e);
       }
     }
-
     this.active = false;
     this.html5Qr = null;
     this.lastScan = null;
     document.getElementById('scannerModal').classList.remove('show');
+
+    // กลับมาหน้า POS (อัปเดต cart bar)
+    updateCartBar();
+
+    // ถ้ามีสินค้าในตะกร้า → แจ้ง + แสดงปุ่มจ่ายเงิน
+    if (this.scanCount > 0) {
+      setTimeout(() => {
+        toast(`✅ สแกนแล้ว ${this.scanCount} รายการ — กด "จ่ายเงิน" เพื่อชำระ`);
+      }, 100);
+    }
   },
 
-  async onScanSuccess(text) {
-    // 🚫 ถ้ากำลัง process → ไม่ทำอะไร (กันสแกนซ้ำ)
-    if (this.processing) return;
-
+  onScanSuccess(text) {
     const now = Date.now();
-    if (text === this.lastScan && now - this.lastScanTime < 1500) return;
 
-    // 🔒 ล็อกทันที
-    this.processing = true;
+    // 🚫 กันสแกนซ้ำบาร์โค้ดเดิมภายใน cooldown
+    if (text === this.lastScan && now - this.lastScanTime < this.cooldown) {
+      return;
+    }
+
     this.lastScan = text;
     this.lastScanTime = now;
 
@@ -97,53 +105,44 @@ const Scanner = {
 
     const product = products.find(p => p.barcode === text);
 
-    // ❌ ไม่พบสินค้า → ปลดล็อกให้สแกนใหม่ได้ (ไม่ปิดกล้อง)
+    // ❌ ไม่พบสินค้า
     if (!product) {
-      document.getElementById('scanStatus').innerHTML =
-        `⚠️ ไม่พบสินค้า: <strong>${escapeHtml(text)}</strong>`;
-      setTimeout(() => {
-        this.processing = false;
-        this.lastScan = null;
-      }, 800);
+      this.showStatus(`⚠️ ไม่พบสินค้า: <strong>${escapeHtml(text)}</strong>`, '#fbbf24');
       return;
     }
 
-    // ❌ สินค้าหมด → ปลดล็อก
+    // ❌ สินค้าหมด
     if (product.stock <= 0) {
-      document.getElementById('scanStatus').innerHTML =
-        `❌ สินค้าหมด: <strong>${escapeHtml(product.name)}</strong>`;
-      setTimeout(() => {
-        this.processing = false;
-        this.lastScan = null;
-      }, 800);
+      this.showStatus(`❌ สินค้าหมด: <strong>${escapeHtml(product.name)}</strong>`, '#f87171');
       return;
     }
 
-    // ❌ สต็อกในตะกร้าไม่พอ → ปลดล็อก
+    // ❌ สต็อกในตะกร้าไม่พอ
     const inCart = cart[product.id] ? cart[product.id].qty : 0;
     if (inCart + 1 > product.stock) {
-      document.getElementById('scanStatus').innerHTML =
-        `⚠️ สต็อกไม่พอ: <strong>${escapeHtml(product.name)}</strong> (เหลือ ${product.stock})`;
-      setTimeout(() => {
-        this.processing = false;
-        this.lastScan = null;
-      }, 800);
+      this.showStatus(
+        `⚠️ สต็อกไม่พอ: <strong>${escapeHtml(product.name)}</strong> (เหลือ ${product.stock})`,
+        '#fbbf24'
+      );
       return;
     }
 
-    // ✅ สแกนสำเร็จ → เพิ่มสินค้า + แสดงข้อความ
+    // ✅ สแกนสำเร็จ → เพิ่มลงตะกร้า (กล้องยังสแกนต่อ)
     addToCart(product.id);
+    this.scanCount++;
 
-    document.getElementById('scanStatus').innerHTML =
-      `✅ เพิ่ม: <strong>${escapeHtml(product.name)}</strong> — ${baht(product.price)}`;
+    this.showStatus(
+      `✅ เพิ่ม: <strong>${escapeHtml(product.name)}</strong> — ${baht(product.price)}<br>` +
+      `<span style="font-size:14px;opacity:0.85">สแกนแล้ว ${this.scanCount} รายการ • รวม ${baht(Cart.total())}</span>`,
+      '#4ade80'
+    );
+  },
 
-    // ปิดกล้องทันที
-    await this.close();
-
-    // 🎯 ไปหน้าจ่ายเงินอัตโนมัติ
-    if (this.autoCheckout) {
-      setTimeout(() => openCheckout(), 150);
-    }
+  showStatus(html, color) {
+    const el = document.getElementById('scanStatus');
+    if (!el) return;
+    el.innerHTML = html;
+    el.style.color = color || 'white';
   },
 
   beep() {
