@@ -652,3 +652,76 @@ input:focus { outline: none; border-color: #16a34a; }
   margin-top: 12px;
   min-height: 20px;
 }
+
+/* ============================================================
+   Scanner Modal
+   ============================================================ */
+.scanner-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 600;
+  flex-direction: column;
+}
+.scanner-modal.show { display: flex; }
+
+.scanner-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.scanner-header button {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.scanner-view {
+  flex: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #111;
+  min-height: 280px;
+}
+
+.scanner-view video {
+  border-radius: 16px;
+}
+
+.scanner-status {
+  color: white;
+  text-align: center;
+  padding: 16px;
+  font-size: 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scanner-status strong { color: #4ade80; }
+
+.scanner-hint {
+  color: rgba(255,255,255,0.6);
+  text-align: center;
+  font-size: 13px;
+  padding-bottom: 16px;
+}

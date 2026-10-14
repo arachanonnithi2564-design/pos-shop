@@ -6,7 +6,11 @@
   <meta name="theme-color" content="#16a34a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>ร้านค้า POS</title>
-    <link rel="stylesheet" href="css/style.css?v=3">
+
+  <link rel="stylesheet" href="css/style.css?v=4">
+
+  <!-- Barcode Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <!-- Firebase SDK (compat version) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -58,7 +62,10 @@
 
     <header>
       <span id="headerTitle">🏪 ขายสินค้า</span>
-      <button class="btn-add" id="headerAddBtn" style="display:none">+</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-add" id="headerScanBtn" style="display:none" title="สแกนบาร์โค้ด">📷</button>
+        <button class="btn-add" id="headerAddBtn" style="display:none" title="เพิ่มสินค้า">+</button>
+      </div>
     </header>
 
     <main>
@@ -118,20 +125,36 @@
     <div class="toast" id="toast"></div>
   </div>
 
+  <!-- ============ Scanner Modal ============ -->
+  <div class="scanner-modal" id="scannerModal">
+    <div class="scanner-content">
+      <div class="scanner-header">
+        <span>📷 สแกนบาร์โค้ด</span>
+        <button onclick="Scanner.close()">✕</button>
+      </div>
+      <div id="scannerView" class="scanner-view"></div>
+      <div class="scanner-status" id="scanStatus">⏳ กำลังเปิดกล้อง...</div>
+      <div class="scanner-hint">
+        💡 เล็งบาร์โค้ดให้อยู่ในกรอบ → ระบบจะเพิ่มสินค้าอัตโนมัติ
+      </div>
+    </div>
+  </div>
+
   <!-- ============ Scripts ============ -->
-    <script src="js/firebase-config.js?v=3"></script>
-  <script src="js/utils.js?v=3"></script>
-  <script src="js/settings.js?v=3"></script>
-  <script src="js/db.js?v=3"></script>
-  <script src="js/promptpay.js?v=3"></script>
-  <script src="js/cart.js?v=3"></script>
-  <script src="js/pin.js?v=3"></script>
-  <script src="js/pos.js?v=3"></script>
-  <script src="js/checkout.js?v=3"></script>
-  <script src="js/products.js?v=3"></script>
-  <script src="js/history.js?v=3"></script>
-  <script src="js/settings-page.js?v=3"></script>
-  <script src="js/auth.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/firebase-config.js?v=4"></script>
+  <script src="js/utils.js?v=4"></script>
+  <script src="js/settings.js?v=4"></script>
+  <script src="js/db.js?v=4"></script>
+  <script src="js/promptpay.js?v=4"></script>
+  <script src="js/cart.js?v=4"></script>
+  <script src="js/pin.js?v=4"></script>
+  <script src="js/pos.js?v=4"></script>
+  <script src="js/checkout.js?v=4"></script>
+  <script src="js/products.js?v=4"></script>
+  <script src="js/history.js?v=4"></script>
+  <script src="js/settings-page.js?v=4"></script>
+  <script src="js/scan.js?v=4"></script>
+  <script src="js/auth.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>

@@ -22,7 +22,7 @@ function renderProductsList() {
       <div class="card-row">
         <div class="info">
           <div class="name">${escapeHtml(p.name)}</div>
-          <div class="meta">${baht(p.price)} • เหลือ ${p.stock} ${p.unit || 'ชิ้น'} • ${escapeHtml(p.category || '')}</div>
+          <div class="meta">${baht(p.price)} • เหลือ ${p.stock} ${p.unit || 'ชิ้น'} • ${escapeHtml(p.category || '')}${p.barcode ? ' • 🏷️ ' + escapeHtml(p.barcode) : ''}</div>
         </div>
         <button class="qty-btn" style="background:#dbeafe;color:#2563eb"
                 onclick="openProductForm('${p.id}')">✏️</button>
@@ -51,6 +51,12 @@ function openProductForm(id = null) {
     <input id="fUnit" value="${p ? escapeHtml(p.unit || 'ชิ้น') : 'ชิ้น'}" placeholder="ชิ้น / ขวด / กิโล">
     <label>หมวดหมู่</label>
     <input id="fCat" value="${p ? escapeHtml(p.category || '') : ''}" placeholder="เช่น น้ำ, ขนม, ของใช้">
+    <label>บาร์โค้ด (สำหรับสแกน)</label>
+    <input id="fBarcode" value="${p ? escapeHtml(p.barcode || '') : ''}"
+           placeholder="เช่น 8851234567890" inputmode="numeric">
+    <div style="font-size:13px;color:#6b7280;margin-top:-8px;margin-bottom:14px">
+      ยิงบาร์โค้ดที่กล่องสินค้าใส่ช่องนี้ → ใช้สแกนได้
+    </div>
     <button class="btn btn-primary" onclick="saveProduct(${id ? `'${id}'` : 'null'})">💾 บันทึก</button>
   `;
 
@@ -63,11 +69,12 @@ async function saveProduct(id) {
   const stock = parseInt(document.getElementById('fStock').value) || 0;
   const unit = document.getElementById('fUnit').value.trim() || 'ชิ้น';
   const category = document.getElementById('fCat').value.trim() || 'ทั่วไป';
+  const barcode = document.getElementById('fBarcode').value.trim();
 
   if (!name) { toast('ใส่ชื่อสินค้าด้วย'); return; }
   if (isNaN(price) || price < 0) { toast('ราคาไม่ถูกต้อง'); return; }
 
-  const data = { name, price, stock, unit, category };
+  const data = { name, price, stock, unit, category, barcode };
 
   if (id) {
     const p = products.find(x => x.id === id);

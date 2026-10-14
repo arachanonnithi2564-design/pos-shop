@@ -28,6 +28,7 @@ function switchTab(tab) {
   };
   document.getElementById('headerTitle').textContent = titles[tab] || shopName;
 
+  document.getElementById('headerScanBtn').style.display = tab === 'pos' ? 'block' : 'none';
   document.getElementById('headerAddBtn').style.display = tab === 'products' ? 'block' : 'none';
   document.getElementById('fab').style.display = tab === 'products' ? 'flex' : 'none';
 
@@ -40,6 +41,7 @@ function switchTab(tab) {
 }
 
 document.getElementById('headerAddBtn').onclick = () => openProductForm();
+document.getElementById('headerScanBtn').onclick = () => Scanner.open();
 
 // ---------- Load Products ----------
 async function loadProducts() {
@@ -51,7 +53,6 @@ let appInitialized = false;
 
 async function initApp() {
   if (appInitialized) {
-    // login แล้วครั้งที่ 2 → refresh ข้อมูล
     await loadProducts();
     if (currentTab === 'pos') renderPos();
     else if (currentTab === 'products') renderProductsList();
@@ -64,7 +65,6 @@ async function initApp() {
   try {
     await loadProducts();
 
-    // ถ้าไม่มีสินค้า → เพิ่มตัวอย่าง
     if (products.length === 0) {
       const samples = [
         { name: 'โค้ก 325ml', price: 15, stock: 24, unit: 'ขวด', category: 'น้ำ' },
