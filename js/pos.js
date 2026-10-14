@@ -33,7 +33,7 @@ function renderPos() {
     filtered.map(p => {
       const inCart = !!cart[p.id];
       return `
-        <div class="product-card ${inCart ? 'in-cart' : ''}" onclick="addToCart(${p.id})">
+        <div class="product-card ${inCart ? 'in-cart' : ''}" onclick="addToCart('${p.id}')">
           <div class="name">${escapeHtml(p.name)}</div>
           <div>
             <div class="price">${baht(p.price)}</div>

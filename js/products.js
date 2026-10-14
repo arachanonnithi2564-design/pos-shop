@@ -25,9 +25,9 @@ function renderProductsList() {
           <div class="meta">${baht(p.price)} • เหลือ ${p.stock} ${p.unit || 'ชิ้น'} • ${escapeHtml(p.category || '')}</div>
         </div>
         <button class="qty-btn" style="background:#dbeafe;color:#2563eb"
-                onclick="openProductForm(${p.id})">✏️</button>
+                onclick="openProductForm('${p.id}')">✏️</button>
         <button class="qty-btn" style="background:#fee2e2;color:#dc2626"
-                onclick="deleteProduct(${p.id})">🗑️</button>
+                onclick="deleteProduct('${p.id}')">🗑️</button>
       </div>
     </div>
   `).join('');
@@ -51,7 +51,7 @@ function openProductForm(id = null) {
     <input id="fUnit" value="${p ? escapeHtml(p.unit || 'ชิ้น') : 'ชิ้น'}" placeholder="ชิ้น / ขวด / กิโล">
     <label>หมวดหมู่</label>
     <input id="fCat" value="${p ? escapeHtml(p.category || '') : ''}" placeholder="เช่น น้ำ, ขนม, ของใช้">
-    <button class="btn btn-primary" onclick="saveProduct(${id || 'null'})">💾 บันทึก</button>
+    <button class="btn btn-primary" onclick="saveProduct(${id ? `'${id}'` : 'null'})">💾 บันทึก</button>
   `;
 
   document.getElementById('modal').classList.add('show');

@@ -30,9 +30,9 @@ function openCheckout() {
             <div class="ci-name">${escapeHtml(i.product.name)}</div>
             <div class="ci-price">${baht(i.product.price)} × ${i.qty}</div>
           </div>
-          <button class="qty-btn minus" onclick="changeQty(${i.product.id}, -1)">−</button>
+          <button class="qty-btn minus" onclick="changeQty('${i.product.id}', -1)">−</button>
           <div class="qty-val">${i.qty}</div>
-          <button class="qty-btn plus" onclick="changeQty(${i.product.id}, 1)">+</button>
+          <button class="qty-btn plus" onclick="changeQty('${i.product.id}', 1)">+</button>
           <div class="ci-sub">${baht(i.product.price * i.qty)}</div>
         </div>
       `).join('')}
@@ -55,7 +55,7 @@ function openCheckout() {
                oninput="setReceived(this.value)"
                style="font-size:28px;font-weight:800;text-align:center">
         <div class="quick-amounts">
-          <button onclick="setReceived(${Math.ceil(total)})">พอดี</button>
+          <button onclick="setReceived('${Math.ceil(total)}')">พอดี</button>
           ${[20, 50, 100, 500, 1000].map(a =>
             `<button onclick="setReceived(${a})">${a}</button>`
           ).join('')}

@@ -61,7 +61,7 @@ const HIST = {
       });
       const icon = s.payment_method === 'cash' ? '💵' : '📱';
       return `
-        <div class="card" onclick="showSaleDetail(${s.id})">
+        <div class="card" onclick="showSaleDetail('${s.id}')">
           <div class="card-row">
             <div style="font-size:26px">${icon}</div>
             <div class="info">
