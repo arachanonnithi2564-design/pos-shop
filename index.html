@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#16a34a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>ร้านค้า POS</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ PIN Screen ============ -->
+  <div class="pin-screen" id="pinScreen">
+    <h1>🔒 ร้านค้า POS</h1>
+    <p id="pinHint">ใส่รหัส PIN 4 หลัก</p>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad" id="pinPad"></div>
+    <button class="btn pin-forgot-btn" onclick="PIN.forgot()">ลืมรหัส?</button>
+  </div>
+
+  <!-- ============ Header ============ -->
+  <header>
+    <span id="headerTitle">🏪 ขายสินค้า</span>
+    <button class="btn-add" id="headerAddBtn" style="display:none">+</button>
+  </header>
+
+  <!-- ============ Main Content ============ -->
+  <main>
+    <!-- หน้า POS -->
+    <div id="screen-pos" class="screen active">
+      <div class="cats" id="catsBar"></div>
+      <div id="productsArea"></div>
+    </div>
+
+    <!-- หน้า สินค้า -->
+    <div id="screen-products" class="screen">
+      <div id="productsListArea"></div>
+    </div>
+
+    <!-- หน้า ประวัติ -->
+    <div id="screen-history" class="screen">
+      <div class="tab-switch">
+        <button class="active" data-h="day" onclick="HIST.setView('day')">วัน</button>
+        <button data-h="week" onclick="HIST.setView('week')">7 วัน</button>
+        <button data-h="month" onclick="HIST.setView('month')">30 วัน</button>
+      </div>
+      <div id="historyContent"></div>
+    </div>
+
+    <!-- หน้า ตั้งค่า -->
+    <div id="screen-settings" class="screen">
+      <div id="settingsContent"></div>
+    </div>
+  </main>
+
+  <!-- ============ Cart Bar ============ -->
+  <div class="cart-bar" id="cartBar">
+    <div class="info">
+      <div class="count" id="cartCount">0 ชิ้น</div>
+      <div class="total" id="cartTotal">฿0</div>
+    </div>
+    <button class="btn-clear" onclick="Cart.clear()">🗑️</button>
+    <button class="btn-pay" onclick="openCheckout()">จ่ายเงิน</button>
+  </div>
+
+  <!-- ============ FAB ============ -->
+  <button class="fab" id="fab" style="display:none" onclick="openProductForm()">+</button>
+
+  <!-- ============ Bottom Nav ============ -->
+  <nav>
+    <button class="active" data-screen="pos" onclick="switchTab('pos')">
+      <span class="icon">🛒</span><span>ขาย</span>
+    </button>
+    <button data-screen="products" onclick="switchTab('products')">
+      <span class="icon">📦</span><span>สินค้า</span>
+    </button>
+    <button data-screen="history" onclick="switchTab('history')">
+      <span class="icon">🧾</span><span>ประวัติ</span>
+    </button>
+    <button data-screen="settings" onclick="switchTab('settings')">
+      <span class="icon">⚙️</span><span>ตั้งค่า</span>
+    </button>
+  </nav>
+
+  <!-- ============ Modal ============ -->
+  <div class="modal" id="modal">
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+
+  <!-- ============ Toast ============ -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ============ Scripts (โหลดตามลำดับ) ============ -->
+  <script src="js/utils.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/promptpay.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/pin.js"></script>
+  <script src="js/pos.js"></script>
+  <script src="js/checkout.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/settings-page.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
