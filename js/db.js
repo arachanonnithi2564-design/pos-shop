@@ -1,112 +1,111 @@
 /* ============================================================
-   Database — IndexedDB
+   Database — Firestore (Cloud)
    ============================================================ */
 
 const DB = {
-  db: null,
-
-  async init() {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open('pos_shop_db', 1);
-
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-
-        if (!db.objectStoreNames.contains('products')) {
-          db.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
-        }
-        if (!db.objectStoreNames.contains('sales')) {
-          const s = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
-          s.createIndex('created_at', 'created_at');
-        }
-        if (!db.objectStoreNames.contains('sale_items')) {
-          const s = db.createObjectStore('sale_items', { keyPath: 'id', autoIncrement: true });
-          s.createIndex('sale_id', 'sale_id');
-        }
-      };
-
-      req.onsuccess = () => {
-        this.db = req.result;
-        resolve();
-      };
-      req.onerror = () => reject(req.error);
-    });
+  _path(collection) {
+    if (!currentUserId) throw new Error('ยังไม่ได้เข้าสู่ระบบ');
+    return db.collection('users').doc(currentUserId).collection(collection);
   },
 
-  tx(store, mode = 'readonly') {
-    return this.db.transaction(store, mode).objectStore(store);
-  },
-
-  req(r) {
-    return new Promise((res, rej) => {
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
-    });
-  },
-
-  // --- Products ---
+  // ---------- Products ----------
   async getProducts() {
-    return this.req(this.tx('products').getAll());
+    const snap = await this._path('products').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   },
+
   async addProduct(p) {
-    return this.req(this.tx('products', 'readwrite').add(p));
+    const { id, ...data } = p;
+    const ref = await this._path('products').add(data);
+    return ref.id;
   },
+
   async updateProduct(p) {
-    return this.req(this.tx('products', 'readwrite').put(p));
+    const { id, ...data } = p;
+    await this._path('products').doc(id).set(data);
   },
+
   async deleteProduct(id) {
-    return this.req(this.tx('products', 'readwrite').delete(id));
+    await this._path('products').doc(id).delete();
   },
 
-  // --- Sales ---
+  // ---------- Sales ----------
   async addSale(s) {
-    return this.req(this.tx('sales', 'readwrite').add(s));
-  },
-  async getSales() {
-    const all = await this.req(this.tx('sales').getAll());
-    return all.sort((a, b) => b.created_at.localeCompare(a.created_at));
-  },
-  async addSaleItem(i) {
-    return this.req(this.tx('sale_items', 'readwrite').add(i));
-  },
-  async getSaleItems(saleId) {
-    const idx = this.tx('sale_items').index('sale_id');
-    return this.req(idx.getAll(saleId));
+    const { id, ...data } = s;
+    const ref = await this._path('sales').add(data);
+    return ref.id;
   },
 
-  // --- Backup ---
+  async getSales() {
+    const snap = await this._path('sales').orderBy('created_at', 'desc').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+
+  async addSaleItem(i) {
+    const { id, ...data } = i;
+    const ref = await this._path('sale_items').add(data);
+    return ref.id;
+  },
+
+  async getSaleItems(saleId) {
+    const snap = await this._path('sale_items').where('sale_id', '==', saleId).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+
+  // ---------- Backup / Restore ----------
   async exportAll() {
-    const products = await this.req(this.tx('products').getAll());
-    const sales = await this.req(this.tx('sales').getAll());
-    const sale_items = await this.req(this.tx('sale_items').getAll());
+    const [prods, sales, items] = await Promise.all([
+      this._path('products').get(),
+      this._path('sales').get(),
+      this._path('sale_items').get()
+    ]);
     return {
-      version: 1,
+      version: 2,
       exported_at: new Date().toISOString(),
-      products,
-      sales,
-      sale_items
+      products: prods.docs.map(d => ({ id: d.id, ...d.data() })),
+      sales: sales.docs.map(d => ({ id: d.id, ...d.data() })),
+      sale_items: items.docs.map(d => ({ id: d.id, ...d.data() }))
     };
   },
 
   async importAll(data) {
-    await this.req(this.tx('products', 'readwrite').clear());
-    await this.req(this.tx('sales', 'readwrite').clear());
-    await this.req(this.tx('sale_items', 'readwrite').clear());
+    // ลบข้อมูลเดิมทั้งหมดก่อน
+    await this.clearAll();
 
-    for (const p of (data.products || [])) {
-      await this.req(this.tx('products', 'readwrite').put(p));
-    }
-    for (const s of (data.sales || [])) {
-      await this.req(this.tx('sales', 'readwrite').put(s));
-    }
-    for (const i of (data.sale_items || [])) {
-      await this.req(this.tx('sale_items', 'readwrite').put(i));
+    // กู้คืนทีละชุด (ใช้ batch เพื่อความเร็ว)
+    const collections = [
+      { name: 'products', items: data.products || [] },
+      { name: 'sales', items: data.sales || [] },
+      { name: 'sale_items', items: data.sale_items || [] }
+    ];
+
+    for (const col of collections) {
+      // Firestore batch จำกัด 500 ต่อครั้ง → แบ่งชุด
+      for (let i = 0; i < col.items.length; i += 400) {
+        const batch = db.batch();
+        const chunk = col.items.slice(i, i + 400);
+        for (const item of chunk) {
+          const { id, ...rest } = item;
+          const ref = id
+            ? this._path(col.name).doc(id)
+            : this._path(col.name).doc();
+          batch.set(ref, rest);
+        }
+        await batch.commit();
+      }
     }
   },
 
   async clearAll() {
-    await this.req(this.tx('products', 'readwrite').clear());
-    await this.req(this.tx('sales', 'readwrite').clear());
-    await this.req(this.tx('sale_items', 'readwrite').clear());
+    const collections = ['products', 'sales', 'sale_items'];
+    for (const name of collections) {
+      const snap = await this._path(name).get();
+      // แบ่ง batch ละ 400
+      for (let i = 0; i < snap.docs.length; i += 400) {
+        const batch = db.batch();
+        snap.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
   }
 };

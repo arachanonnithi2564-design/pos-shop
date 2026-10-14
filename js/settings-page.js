@@ -22,6 +22,14 @@ function renderSettings() {
     </div>
 
     <div class="card">
+      <div style="font-weight:700;font-size:18px;margin-bottom:12px">👤 บัญชี</div>
+      <div style="font-size:14px;color:#6b7280;margin-bottom:12px">
+        เข้าสู่ระบบด้วย: <strong style="color:#111827">${currentUser ? currentUser.email : '-'}</strong>
+      </div>
+      <button class="btn btn-secondary" onclick="Auth.logout()">🚪 ออกจากระบบ</button>
+    </div>
+
+    <div class="card">
       <div style="font-weight:700;font-size:18px;margin-bottom:12px">🔒 ความปลอดภัย</div>
       ${hasPin ? `
         <button class="btn btn-warning" onclick="PIN.show('set', () => renderSettings())">🔑 เปลี่ยนรหัส PIN</button>

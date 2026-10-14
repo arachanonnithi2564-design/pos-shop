@@ -47,30 +47,46 @@ async function loadProducts() {
   products.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'th'));
 }
 
-// ---------- Init ----------
-async function init() {
-  await DB.init();
-  await loadProducts();
+let appInitialized = false;
 
-  // ถ้าไม่มีสินค้าเลย เพิ่มตัวอย่างให้
-  if (products.length === 0) {
-    const samples = [
-      { name: 'โค้ก 325ml', price: 15, stock: 24, unit: 'ขวด', category: 'น้ำ' },
-      { name: 'น้ำเปล่า', price: 7, stock: 50, unit: 'ขวด', category: 'น้ำ' },
-      { name: 'มาม่าต้มยำ', price: 7, stock: 30, unit: 'ซอง', category: 'อาหาร' },
-      { name: 'ลูกอม', price: 5, stock: 100, unit: 'เม็ด', category: 'ขนม' },
-      { name: 'สบู่', price: 12, stock: 10, unit: 'ก้อน', category: 'ของใช้' }
-    ];
-    for (const s of samples) await DB.addProduct(s);
+async function initApp() {
+  if (appInitialized) {
+    // login แล้วครั้งที่ 2 → refresh ข้อมูล
     await loadProducts();
+    if (currentTab === 'pos') renderPos();
+    else if (currentTab === 'products') renderProductsList();
+    else if (currentTab === 'history') HIST.render();
+    else if (currentTab === 'settings') renderSettings();
+    return;
   }
+  appInitialized = true;
 
-  // ถ้ามี PIN ให้ล็อกก่อน
-  if (Settings.hasPin()) {
-    PIN.show('unlock');
+  try {
+    await loadProducts();
+
+    // ถ้าไม่มีสินค้า → เพิ่มตัวอย่าง
+    if (products.length === 0) {
+      const samples = [
+        { name: 'โค้ก 325ml', price: 15, stock: 24, unit: 'ขวด', category: 'น้ำ' },
+        { name: 'น้ำเปล่า', price: 7, stock: 50, unit: 'ขวด', category: 'น้ำ' },
+        { name: 'มาม่าต้มยำ', price: 7, stock: 30, unit: 'ซอง', category: 'อาหาร' },
+        { name: 'ลูกอม', price: 5, stock: 100, unit: 'เม็ด', category: 'ขนม' },
+        { name: 'สบู่', price: 12, stock: 10, unit: 'ก้อน', category: 'ของใช้' }
+      ];
+      for (const s of samples) await DB.addProduct(s);
+      await loadProducts();
+    }
+
+    if (Settings.hasPin()) {
+      PIN.show('unlock');
+    }
+
+    switchTab('pos');
+  } catch (e) {
+    console.error(e);
+    toast('โหลดข้อมูลผิดพลาด: ' + e.message);
   }
-
-  switchTab('pos');
 }
 
-init();
+// เริ่มระบบ Authentication
+Auth.init();
